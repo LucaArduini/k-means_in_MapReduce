@@ -1,22 +1,13 @@
 package it.unipi.hadoop;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
-import java.util.*;
 
+import java.io.*;
+import java.util.*;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
@@ -26,11 +17,10 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
 
-public class KMeans
-{
+public class KMeans{
+
     public static String logFile = "outputsLog.txt";
-    public static class KMeansMapper extends Mapper<Object, Text, IntWritable, ClusteringFeature>
-    {
+    public static class KMeansMapper extends Mapper<Object, Text, IntWritable, ClusteringFeature> {
         // Hadoop Map Types (K1, V1) ---> (K2, L(V2))
         // K1 --> Object (Not useful)
         // V1 --> String representation of a Point
@@ -39,8 +29,7 @@ public class KMeans
         ArrayList<Point> centroids;
         ArrayList<ClusteringFeature> clusteringFeatureList;
 
-        public void setup(Context context) throws IOException, InterruptedException
-        {
+        public void setup(Context context) throws IOException, InterruptedException {
             // initialization
             centroids = new ArrayList<>();
             clusteringFeatureList = new ArrayList<>();
@@ -48,9 +37,8 @@ public class KMeans
             // cast centroid string to an array of points (centroids)
             String centroidsString = context.getConfiguration().get("centroids");
             String[] splits = centroidsString.split("\\n");
-            for(int i= 0; i < splits.length; i++){
+            for(int i= 0; i < splits.length; i++)
                 centroids.add(parsePoint(splits[i]));
-            }
 
             for(int i=0; i<centroids.size(); i++){
                 // Initializing clustering features < index_cluster , <[0....0], 0>. This is needed in order to sum later.
@@ -59,8 +47,7 @@ public class KMeans
         }
 
         @Override
-        public void map(Object key, Text value, Context context) throws IOException, InterruptedException
-        { 
+        public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
             Point point = parsePoint(value.toString());
             // Qui decido a quale cluster assegnare il punto preso da input
             int indexNearestCentroid = point.nearestCentroid(centroids);
@@ -70,23 +57,19 @@ public class KMeans
             clusteringFeatureList.get(indexNearestCentroid).setNumPoints(clusteringFeatureList.get(indexNearestCentroid).getNumPoints()+1);
         }
 
-        public void cleanup(Context context) throws IOException, InterruptedException
-        {
-            for(int i=0; i<centroids.size(); i++){
+        public void cleanup(Context context) throws IOException, InterruptedException {
+            for(int i=0; i<centroids.size(); i++)
                 context.write(new IntWritable(i), clusteringFeatureList.get(i));
-            }
         }
     }
 
-    public static class KMeansReducer extends Reducer<IntWritable, ClusteringFeature, IntWritable, Point>
-    {
+    public static class KMeansReducer extends Reducer<IntWritable, ClusteringFeature, IntWritable, Point>{
         // K2 = IntWritable (index cluster)
         // V2 = ClusteringFeature (coppia)
         // K3 = IntWritable (index cluster)
         // V3 = Point (centroide di quel cluster)
 
-        public void reduce(IntWritable key, Iterable<ClusteringFeature> values, Context context) throws IOException, InterruptedException
-        {
+        public void reduce(IntWritable key, Iterable<ClusteringFeature> values, Context context) throws IOException, InterruptedException {
             ArrayList<ClusteringFeature> listCouples = new ArrayList<>();
             for(ClusteringFeature cf : values){
                 ClusteringFeature toAdd = new ClusteringFeature(cf.getPartialSum(), cf.getNumPoints());
@@ -99,27 +82,28 @@ public class KMeans
             Point centroid = result.computeMean();
 
             // send in the output
-            context.write(key, centroid);
+            context.write(key, centroid);           //nella forma: "0       <4.0019444906464745, 4.546128116278345>"
         }
     }
 
     public static void main(String[] args) throws Exception {
         Configuration conf = new Configuration();
         String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
+
         if (otherArgs.length != 5) {  // input, k, niter, output, dim
-            System.err.println("Usage: KMeans <input> <k> <niter> <output>");
+            System.err.println("Usage: KMeans <input> <k> <max_iter> <output>");
             System.exit(1);
         }
         System.out.println("args[0]: <input>=" + otherArgs[0]);
         System.out.println("args[1]: <k>=" + otherArgs[1]);
-        System.out.println("args[2]: <niter>=" + otherArgs[2]);
+        System.out.println("args[2]: <max_iter>=" + otherArgs[2]);
         System.out.println("args[3]: <output>=" + otherArgs[3]);
         System.out.println("args[4]: <d>=" + otherArgs[4]);
 
         // initial random centroids computation
         int k = Integer.parseInt(otherArgs[1]);
         ArrayList<Point> initialCentroids = Point.getPoints(k, Integer.parseInt(otherArgs[4]));
-        
+
         int iter = 0;
         int MAX_ITER = Integer.parseInt(otherArgs[2]);
         long start = System.currentTimeMillis();
@@ -127,7 +111,7 @@ public class KMeans
         log("Dataset : " + otherArgs[0]);
         log("------------------------------------------------------------");
         while (iter < MAX_ITER) {
-            Job job = Job.getInstance(conf, "ParallerKMeans");
+            Job job = Job.getInstance(conf, "ParallelKMeans");
             job.setJarByClass(KMeans.class);
 
             // set mapper/reducer
@@ -162,12 +146,9 @@ public class KMeans
             ////////////////////////////////////
 
             // read the new centroids computed by the job. otherArgs[3] = name of the output file
-            ArrayList<Point> newCentroids = new ArrayList<>();
-            newCentroids = readAndAddCentroid(conf, new Path(otherArgs[3]+iter));
-            if(newCentroids == null){
-                System.err.println("It was not possible to read the centroids");
-                System.exit(1);
-            }
+            ArrayList<Point> newCentroids = new ArrayList<Point>();
+            newCentroids = readAndAddCentroid(conf, new Path(otherArgs[3]+iter), k);
+
             iter++;
 
             // Logging
@@ -189,7 +170,7 @@ public class KMeans
         }
         long end = System.currentTimeMillis();
         long time = end - start;
-        log("FINITO : ci sono volute " + (iter) + " iterazioni e " + time + " milliseconds");
+        log("FINITO : ci sono volute " + (iter) + " iterazioni e " + time + " millisecondi");
         log("------------------------------------------------------------");
     }
 
@@ -198,7 +179,6 @@ public class KMeans
         fileWriter.write(msg + '\n');
         fileWriter.close();
     }
-
 
     private static boolean checkTermination(ArrayList<Point> initialCentroids, ArrayList<Point> newCentroids) {
         for(int i = 0; i < initialCentroids.size(); i++){
@@ -223,14 +203,16 @@ public class KMeans
 
 
 
-    private static ArrayList<Point> readAndAddCentroid(Configuration conf, Path outputPath) throws IOException {
+    private static ArrayList<Point> readAndAddCentroid(Configuration conf, Path outputPath, int k) throws IOException {
         // Function used to read centroids computed by the job and sent in the output file in the HDFS
         // It reads them and returns an ArrayList<Point>
 
         FileSystem fs = FileSystem.get(conf);
         FileStatus[] fileStatuses = fs.listStatus(outputPath);      //ex: outputPath = /user/hadoop/output_angelo0
-        ArrayList<Point> list = new ArrayList<>();
-        boolean output_found = false;
+        ArrayList<Point> centroidsList = new ArrayList<>(k);
+        //boolean output_found = false;
+
+        boolean[] test = new boolean[k];    //inizializzato a false di default
 
         for (FileStatus status : fileStatuses) {
             if (!status.isDirectory()) {
@@ -240,15 +222,25 @@ public class KMeans
                     String line;
                     while ((line = br.readLine()) != null) {
                         System.out.println("linea letta dall'output del reducer: "+line);
-                        list.add(parsePoint(line.substring(2)));
+                        //centroidsList.add(parsePoint(line.substring(2)));
+
+                        int read_centroids = Integer.parseInt(line);
+                        centroidsList.set(read_centroids, parsePoint(line.substring(2)));
+                        test[read_centroids] = true;
                     }
                     br.close();
-                    output_found = true;
+                    //output_found = true;
                 }
             }
         }
-
-        return (output_found)? list : null;
+        //return (output_found)? centroidsList : null;
+        for(boolean x : test){
+            if(x==false){
+                System.err.println("It was not possible to read all the centroids");
+                System.exit(1);
+            }
+        }
+        return centroidsList;
     }
 
     private static Point parsePoint(String str) {
