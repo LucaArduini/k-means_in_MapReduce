@@ -1,11 +1,12 @@
 package it.unipi.hadoop;
-import org.apache.hadoop.io.Writable;
 
+import org.apache.hadoop.io.Writable;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.*;
+import java.util.Random;
+
 import static java.lang.Math.pow;
 import static java.lang.Math.sqrt;
 
@@ -13,15 +14,14 @@ public class Point implements Writable{
     private ArrayList<Double> features = new ArrayList<>();
     private int dim;
 
-    public Point(int d){
-        dim = d;
-        for(int i = 0; i < d; i++){
+    public Point(int size){
+        dim = size;
+        for(int i = 0; i < size; i++)
             features.add(0.0);
-        }
     }
     
     public Point(){
-        
+        ; //nothing
     }
     
     public Point(ArrayList<Double> features) {
@@ -42,29 +42,27 @@ public class Point implements Writable{
     }
 
     public void sumPoint(Point p){
-        for(int i = 0; i < p.getFeatures().size(); i++){
+        for(int i = 0; i < dim; i++)
             features.set(i, features.get(i) + p.getFeatures().get(i));
-        }
     }
 
-    public Double distance(Point p){
+    private Double distance(Point p){
         Double sum = 0.0;
 
-        for(int i = 0; i < features.size(); i++){
+        for(int i = 0; i < dim; i++)
             sum += pow(features.get(i) - p.getFeatures().get(i), 2);
-        }
 
         sum = sqrt(sum);
         return sum;
     }
 
     public int nearestCentroid(ArrayList<Point> centroids){
-        // INIT
+        // suppongo centroide 0 sia il più vicino al mio punto
         int index_min = 0;
         double dist_min = distance(centroids.get(0));
 
-        // SCORRI
-        for(int i = 1; i < centroids.size(); i++){
+        // controllo se esiste un centroide più vicino al punto
+        for(int i = 1; i < dim; i++){
             double d = distance(centroids.get(i));
             if(d < dist_min){
                 dist_min = d;
@@ -75,44 +73,8 @@ public class Point implements Writable{
     }
 
     public void scale(int n){
-        for(int i = 0; i < features.size(); i++){
+        for(int i = 0; i < dim; i++)
             features.set(i, features.get(i) / n);
-        }
-    }
-
-    public String toString() {
-        StringBuilder str=new StringBuilder("");
-        for (int i = 0; i < features.size(); i++) {
-            str.append(features.get(i));
-
-            if (i < features.size() - 1) {
-                str.append(", ");
-            }
-        }
-        return "<" + str + ">";
-    }
-
-    @Override
-    public void write(DataOutput dataOutput) throws IOException {
-        dataOutput.writeInt(dim);
-        for(int i = 0; i < dim; i++)
-            dataOutput.writeDouble(features.get(i));
-    }
-
-    @Override
-    public void readFields(DataInput dataInput) throws IOException {
-        dim = dataInput.readInt();
-        for(int i = 0; i < dim; i++)
-            features.add(dataInput.readDouble());
-    }
-
-    public boolean equals(Point p){
-        for(int i = 0; i < dim; i++){
-            if((double) features.get(i) != (double) p.getFeatures().get(i)){
-                return false;
-            }
-        }
-        return true;
     }
 
     public static ArrayList<Point> getPoints(int k, int dim) {
@@ -132,4 +94,39 @@ public class Point implements Writable{
 
         return arrays;
     }
+
+    public String toString() {
+        StringBuilder str=new StringBuilder("");
+        for (int i = 0; i < dim; i++) {
+            str.append(features.get(i));
+
+            if (i < features.size() - 1) {
+                str.append(", ");
+            }
+        }
+        return "<" + str + ">";
+    }
+
+    public boolean equals(Point p){
+        for(int i = 0; i < dim; i++){
+            if(features.get(i) != p.getFeatures().get(i))
+                return false;
+        }
+        return true;
+    }
+
+    @Override
+    public void write(DataOutput dataOutput) throws IOException {
+        dataOutput.writeInt(dim);
+        for(int i = 0; i < dim; i++)
+            dataOutput.writeDouble(features.get(i));
+    }
+
+    @Override
+    public void readFields(DataInput dataInput) throws IOException {
+        dim = dataInput.readInt();
+        for(int i = 0; i < dim; i++)
+            features.add(dataInput.readDouble());
+    }
 }
+
