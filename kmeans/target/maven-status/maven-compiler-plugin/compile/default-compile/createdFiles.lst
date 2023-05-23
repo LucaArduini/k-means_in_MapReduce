@@ -1,0 +1,5 @@
+it/unipi/hadoop/KMeans$KMeansMapper.class
+it/unipi/hadoop/KMeans$KMeansReducer.class
+it/unipi/hadoop/ClusteringFeature.class
+it/unipi/hadoop/Point.class
+it/unipi/hadoop/KMeans.class
