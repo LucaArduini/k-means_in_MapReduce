@@ -5,7 +5,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
-
+import java.util.*;
 import static java.lang.Math.pow;
 import static java.lang.Math.sqrt;
 
@@ -13,14 +13,15 @@ public class Point implements Writable{
     private ArrayList<Double> features = new ArrayList<>();
     private int dim;
 
-    public Point(int size){
-        dim = size;
-        for(int i = 0; i < size; i++)
+    public Point(int d){
+        dim = d;
+        for(int i = 0; i < d; i++){
             features.add(0.0);
+        }
     }
     
     public Point(){
-        ; //nothing
+        
     }
     
     public Point(ArrayList<Double> features) {
@@ -41,27 +42,29 @@ public class Point implements Writable{
     }
 
     public void sumPoint(Point p){
-        for(int i = 0; i < dim; i++)
+        for(int i = 0; i < p.getFeatures().size(); i++){
             features.set(i, features.get(i) + p.getFeatures().get(i));
+        }
     }
 
-    private Double distance(Point p){
+    public Double distance(Point p){
         Double sum = 0.0;
 
-        for(int i = 0; i < dim; i++)
+        for(int i = 0; i < features.size(); i++){
             sum += pow(features.get(i) - p.getFeatures().get(i), 2);
+        }
 
         sum = sqrt(sum);
         return sum;
     }
 
     public int nearestCentroid(ArrayList<Point> centroids){
-        // suppongo centroide 0 sia il più vicino al mio punto
+        // INIT
         int index_min = 0;
         double dist_min = distance(centroids.get(0));
 
-        // controllo se esiste un centroide più vicino al punto
-        for(int i = 1; i < dim; i++){
+        // SCORRI
+        for(int i = 1; i < centroids.size(); i++){
             double d = distance(centroids.get(i));
             if(d < dist_min){
                 dist_min = d;
@@ -72,13 +75,14 @@ public class Point implements Writable{
     }
 
     public void scale(int n){
-        for(int i = 0; i < dim; i++)
+        for(int i = 0; i < features.size(); i++){
             features.set(i, features.get(i) / n);
+        }
     }
 
     public String toString() {
         StringBuilder str=new StringBuilder("");
-        for (int i = 0; i < dim; i++) {
+        for (int i = 0; i < features.size(); i++) {
             str.append(features.get(i));
 
             if (i < features.size() - 1) {
@@ -86,14 +90,6 @@ public class Point implements Writable{
             }
         }
         return "<" + str + ">";
-    }
-
-    public boolean equals(Point p){
-        for(int i = 0; i < dim; i++){
-            if(features.get(i) != p.getFeatures().get(i))
-                return false;
-        }
-        return true;
     }
 
     @Override
@@ -109,5 +105,31 @@ public class Point implements Writable{
         for(int i = 0; i < dim; i++)
             features.add(dataInput.readDouble());
     }
-}
 
+    public boolean equals(Point p){
+        for(int i = 0; i < dim; i++){
+            if((double) features.get(i) != (double) p.getFeatures().get(i)){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static ArrayList<Point> getPoints(int k, int dim) {
+        double minValue = 0.0;
+        double maxValue = 5.0;
+        ArrayList<Point> arrays = new ArrayList<>();
+        Random random = new Random();
+
+        for (int i = 0; i < k; i++) {
+            ArrayList<Double> list = new ArrayList<>();
+            for (int j = 0; j < dim; j++) {
+                double randomValue = minValue + (maxValue - minValue) * random.nextDouble();
+                list.add(randomValue);
+            }
+            arrays.add(new Point(list));
+        }
+
+        return arrays;
+    }
+}

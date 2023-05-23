@@ -65,8 +65,13 @@ public class ClusteringFeature implements Writable{
         if(numPoints!=0){
             partialSum.scale(numPoints);
         }
+        else{
+            // If this cluster is empty I re-initialize centroid
+            partialSum = Point.getPoints(1, partialSum.getDim()).get(0);
+        }
         return partialSum;
     }
+
 
     public String toString(){
         return "Num Points : " + numPoints + " | " + partialSum;

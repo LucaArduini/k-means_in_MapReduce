@@ -1,7 +1,14 @@
 package it.unipi.hadoop;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.*;
 
 import org.apache.hadoop.fs.FileStatus;
@@ -21,6 +28,7 @@ import org.apache.hadoop.util.GenericOptionsParser;
 
 public class KMeans
 {
+    public static String logFile = "outputsLog.txt";
     public static class KMeansMapper extends Mapper<Object, Text, IntWritable, ClusteringFeature>
     {
         // Hadoop Map Types (K1, V1) ---> (K2, L(V2))
@@ -110,11 +118,14 @@ public class KMeans
 
         // initial random centroids computation
         int k = Integer.parseInt(otherArgs[1]);
-        ArrayList<Point> initialCentroids = startCentroids(k, Integer.parseInt(otherArgs[4]));
+        ArrayList<Point> initialCentroids = Point.getPoints(k, Integer.parseInt(otherArgs[4]));
         
         int iter = 0;
         int MAX_ITER = Integer.parseInt(otherArgs[2]);
-
+        long start = System.currentTimeMillis();
+        log("START");
+        log("Dataset : " + otherArgs[0]);
+        log("------------------------------------------------------------");
         while (iter < MAX_ITER) {
             Job job = Job.getInstance(conf, "ParallerKMeans");
             job.setJarByClass(KMeans.class);
@@ -157,17 +168,37 @@ public class KMeans
                 System.err.println("It was not possible to read the centroids");
                 System.exit(1);
             }
-            
+            iter++;
+
+            // Logging
+            // --------------------------------------------
+            for(int i = 0; i < initialCentroids.size(); i++){
+                log("Centroide all'iterazione precedente (" + (iter-1) + ") " + initialCentroids.get(i).toString());
+                log("Nuovo Centroide iterazione (" + (iter) + ") " + newCentroids.get(i).toString());
+            }
+            // --------------------------------------------
             // check if the centroids have changed
             if (checkTermination(initialCentroids, newCentroids)) {
-                iter++;
                 System.out.println("[ITER: " + iter + " ] centroids: "+initialCentroids.toString());
                 break;
             }
-            iter++;
+            
+
+
             initialCentroids = newCentroids;
         }
+        long end = System.currentTimeMillis();
+        long time = end - start;
+        log("FINITO : ci sono volute " + (iter) + " iterazioni e " + time + " milliseconds");
+        log("------------------------------------------------------------");
     }
+
+    private static void log(String msg) throws IOException{
+        FileWriter fileWriter = new FileWriter(logFile, true);
+        fileWriter.write(msg + '\n');
+        fileWriter.close();
+    }
+
 
     private static boolean checkTermination(ArrayList<Point> initialCentroids, ArrayList<Point> newCentroids) {
         for(int i = 0; i < initialCentroids.size(); i++){
@@ -177,23 +208,20 @@ public class KMeans
         return true;
     }
 
-    public static ArrayList<Point> startCentroids(int k, int dim) {
-        double minValue = 0.0;
-        double maxValue = 5.0;
-        ArrayList<Point> arrays = new ArrayList<>();
-        Random random = new Random();
-
-        for (int i = 0; i < k; i++) {
-            ArrayList<Double> list = new ArrayList<>();
-            for (int j = 0; j < dim; j++) {
-                double randomValue = minValue + (maxValue - minValue) * random.nextDouble();
-                list.add(randomValue);
-            }
-            arrays.add(new Point(list));
+    // FUNZIONE DI TERMINAZIONE QUALORA PULIAFITO DICESSE CHE VA BENE
+    /* --------------------------------------------------------------------------
+    private static boolean checkTermination2(ArrayList<Point> initialCentroids, ArrayList<Point> newCentroids, double epsilon) {
+        int sum = 0;
+        for(int i = 0; i < initialCentroids.size(); i++){
+            sum += initialCentroids.get(i).distance(newCentroids.get(i));
         }
-
-        return arrays;
+        if(sum < epsilon)
+            return true;
+        return false;
     }
+    */
+
+
 
     private static ArrayList<Point> readAndAddCentroid(Configuration conf, Path outputPath) throws IOException {
         // Function used to read centroids computed by the job and sent in the output file in the HDFS
