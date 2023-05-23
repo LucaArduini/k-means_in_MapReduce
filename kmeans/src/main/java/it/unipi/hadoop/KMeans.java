@@ -152,7 +152,11 @@ public class KMeans
 
             // read the new centroids computed by the job. otherArgs[3] = name of the output file
             ArrayList<Point> newCentroids = new ArrayList<>();
-            newCentroids=readAndAddCentroid(conf, new Path(otherArgs[3]+iter));
+            newCentroids = readAndAddCentroid(conf, new Path(otherArgs[3]+iter));
+            if(newCentroids == null){
+                System.err.println("It was not possible to read the centroids");
+                System.exit(1);
+            }
             
             // check if the centroids have changed
             if (checkTermination(initialCentroids, newCentroids)) {
@@ -194,24 +198,29 @@ public class KMeans
     private static ArrayList<Point> readAndAddCentroid(Configuration conf, Path outputPath) throws IOException {
         // Function used to read centroids computed by the job and sent in the output file in the HDFS
         // It reads them and returns an ArrayList<Point>
+
         FileSystem fs = FileSystem.get(conf);
-        FileStatus[] fileStatuses = fs.listStatus(outputPath);
+        FileStatus[] fileStatuses = fs.listStatus(outputPath);      //ex: outputPath = /user/hadoop/output_angelo0
         ArrayList<Point> list = new ArrayList<>();
+        boolean output_found = false;
+
         for (FileStatus status : fileStatuses) {
             if (!status.isDirectory()) {
                 Path filePath = status.getPath();
-                if (!filePath.getName().startsWith("_")) {
+                if (filePath.getName().startsWith("part-r-")) {
                     BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(filePath)));
                     String line;
                     while ((line = br.readLine()) != null) {
+                        System.out.println("linea letta dall'output del reducer: "+line);
                         list.add(parsePoint(line.substring(2)));
                     }
                     br.close();
-                    return list;
+                    output_found = true;
                 }
             }
         }
-        return null;
+
+        return (output_found)? list : null;
     }
 
     private static Point parsePoint(String str) {
