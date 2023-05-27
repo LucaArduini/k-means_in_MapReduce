@@ -91,8 +91,8 @@ public class KMeans{
         Configuration conf = new Configuration();
         String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
 
-        if (otherArgs.length != 5) {  // input, k, niter, output, dim
-            System.err.println("Usage: KMeans <input> <k> <max_iter> <output>");
+        if (otherArgs.length != 6) {  // input, k, niter, output, dim, epsilon
+            System.err.println("Usage: KMeans <input> <k> <max_iter> <output> <epsilon>");
             System.exit(1);
         }
         System.out.println("args[0]: <input>=" + otherArgs[0]);
@@ -100,6 +100,7 @@ public class KMeans{
         System.out.println("args[2]: <max_iter>=" + otherArgs[2]);
         System.out.println("args[3]: <output>=" + otherArgs[3]);
         System.out.println("args[4]: <d>=" + otherArgs[4]);
+        System.out.println("args[5]  <epsilon>="+otherArgs[5]);
 
         // initial random centroids computation
         int k = Integer.parseInt(otherArgs[1]);
@@ -160,12 +161,10 @@ public class KMeans{
             }
             // --------------------------------------------
             // check if the centroids have changed
-            if (checkTermination(initialCentroids, newCentroids)) {
+            if (checkTermination(initialCentroids, newCentroids, Double.parseDouble(otherArgs[5]))) {
                 System.out.println("[ITER: " + iter + " ] centroids: "+initialCentroids.toString());
                 break;
             }
-            
-
 
             initialCentroids = newCentroids;
         }
@@ -181,6 +180,7 @@ public class KMeans{
         fileWriter.close();
     }
 
+    /* 
     private static boolean checkTermination(ArrayList<Point> initialCentroids, ArrayList<Point> newCentroids) throws IOException{
         for(int i = 0; i < initialCentroids.size(); i++){
             if(initialCentroids.get(i).equals(newCentroids.get(i))==false){
@@ -190,20 +190,20 @@ public class KMeans{
         }
         return true;
     }
+    */
 
     // FUNZIONE DI TERMINAZIONE QUALORA PULIAFITO DICESSE CHE VA BENE
-    /* --------------------------------------------------------------------------
-    private static boolean checkTermination2(ArrayList<Point> initialCentroids, ArrayList<Point> newCentroids, double epsilon) {
-        int sum = 0;
+    
+    private static boolean checkTermination(ArrayList<Point> initialCentroids, ArrayList<Point> newCentroids, double epsilon) {
+        double sum = 0;
         for(int i = 0; i < initialCentroids.size(); i++){
             sum += initialCentroids.get(i).distance(newCentroids.get(i));
         }
+        System.out.println("[CENTROIDS DISTANCES SUM: "+sum+"]");
         if(sum < epsilon)
             return true;
         return false;
     }
-    */
-
 
 
     private static ArrayList<Point> readAndAddCentroid(Configuration conf, Path outputPath, int k) throws IOException {
