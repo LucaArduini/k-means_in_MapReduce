@@ -159,6 +159,7 @@ public class KMeans{
                 log("Centroide all'iterazione precedente (" + (iter-1) + ") " + initialCentroids.get(i).toString());
                 log("Nuovo Centroide iterazione (" + (iter) + ") " + newCentroids.get(i).toString());
             }
+            log("----------------------------------------------------------------------------");
             // --------------------------------------------
             // check if the centroids have changed
             if (checkTermination(initialCentroids, newCentroids, Double.parseDouble(otherArgs[5]))) {
