@@ -21,7 +21,7 @@ public class Point implements Writable{
     }
     
     public Point(){
-        ; //nothing
+         //nothing
     }
     
     public Point(ArrayList<Double> features) {
@@ -62,7 +62,7 @@ public class Point implements Writable{
         double dist_min = distance(centroids.get(0));
 
         // controllo se esiste un centroide più vicino al punto
-        for(int i = 1; i < dim; i++){
+        for(int i = 1; i < centroids.size(); i++){
             double d = distance(centroids.get(i));
             if(d < dist_min){
                 dist_min = d;
@@ -109,7 +109,7 @@ public class Point implements Writable{
 
     public boolean equals(Point p){
         for(int i = 0; i < dim; i++){
-            if(features.get(i) != p.getFeatures().get(i))
+            if((double) features.get(i) != (double) p.getFeatures().get(i))
                 return false;
         }
         return true;
@@ -129,4 +129,3 @@ public class Point implements Writable{
             features.add(dataInput.readDouble());
     }
 }
-

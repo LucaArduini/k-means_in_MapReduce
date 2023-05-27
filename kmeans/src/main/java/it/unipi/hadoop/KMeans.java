@@ -58,6 +58,7 @@ public class KMeans{
         }
 
         public void cleanup(Context context) throws IOException, InterruptedException {
+            System.out.println(clusteringFeatureList);
             for(int i=0; i<centroids.size(); i++)
                 context.write(new IntWritable(i), clusteringFeatureList.get(i));
         }
@@ -102,7 +103,7 @@ public class KMeans{
 
         // initial random centroids computation
         int k = Integer.parseInt(otherArgs[1]);
-        ArrayList<Point> initialCentroids = Point.getPoints(k, Integer.parseInt(otherArgs[4]));
+        ArrayList<Point> initialCentroids = getPoints(k, Integer.parseInt(otherArgs[4]));
 
         int iter = 0;
         int MAX_ITER = Integer.parseInt(otherArgs[2]);
@@ -113,7 +114,7 @@ public class KMeans{
         while (iter < MAX_ITER) {
             Job job = Job.getInstance(conf, "ParallelKMeans");
             job.setJarByClass(KMeans.class);
-
+            job.setNumReduceTasks(2);
             // set mapper/reducer
             job.setMapperClass(KMeansMapper.class);
             job.setReducerClass(KMeansReducer.class);
@@ -180,10 +181,12 @@ public class KMeans{
         fileWriter.close();
     }
 
-    private static boolean checkTermination(ArrayList<Point> initialCentroids, ArrayList<Point> newCentroids) {
+    private static boolean checkTermination(ArrayList<Point> initialCentroids, ArrayList<Point> newCentroids) throws IOException{
         for(int i = 0; i < initialCentroids.size(); i++){
-            if(initialCentroids.get(i).equals(newCentroids.get(i))==false)
+            if(initialCentroids.get(i).equals(newCentroids.get(i))==false){
+                log("HO STAMPATO FALSE");
                 return false;
+            }
         }
         return true;
     }
@@ -209,7 +212,9 @@ public class KMeans{
 
         FileSystem fs = FileSystem.get(conf);
         FileStatus[] fileStatuses = fs.listStatus(outputPath);      //ex: outputPath = /user/hadoop/output_angelo0
-        ArrayList<Point> centroidsList = new ArrayList<>(k);
+        ArrayList<Point> centroidsList = new ArrayList<>();
+        for(int i = 0; i < k; i++)
+            centroidsList.add(new Point());
         //boolean output_found = false;
 
         boolean[] test = new boolean[k];    //inizializzato a false di default
@@ -224,7 +229,7 @@ public class KMeans{
                         System.out.println("linea letta dall'output del reducer: "+line);
                         //centroidsList.add(parsePoint(line.substring(2)));
 
-                        int read_centroids = Integer.parseInt(line);
+                        int read_centroids = Integer.parseInt(line.substring(0, 1));
                         centroidsList.set(read_centroids, parsePoint(line.substring(2)));
                         test[read_centroids] = true;
                     }
@@ -243,6 +248,49 @@ public class KMeans{
         return centroidsList;
     }
 
+public static ArrayList<Point> getPoints(int k, int dim) {
+    double minValue = 0.0;
+    double maxValue = 5.0;
+    ArrayList<Point> arrays = new ArrayList<>();
+    Random random = new Random();
+
+    for (int i = 0; i < k; i++) {
+        ArrayList<Double> list = new ArrayList<>();
+        for (int j = 0; j < dim; j++) {
+            double randomValue = minValue + (maxValue - minValue) * random.nextDouble();
+            list.add(randomValue);
+        }
+        arrays.add(new Point(list));
+    }
+
+    return arrays;
+}
+/* 
+private static ArrayList<Point> readAndAddCentroid(Configuration conf, Path outputPath) throws IOException {
+    // Function used to read centroids computed by the job and sent in the output file in the HDFS
+    // It reads them and returns an ArrayList<Point>
+    FileSystem fs = FileSystem.get(conf);
+    FileStatus[] fileStatuses = fs.listStatus(outputPath);      //ex: outputPath = /user/hadoop/output_angelo0
+    ArrayList<Point> list = new ArrayList<>();
+    boolean output_found = false;
+    for (FileStatus status : fileStatuses) {
+        if (!status.isDirectory()) {
+            Path filePath = status.getPath();
+            if (filePath.getName().startsWith("part-r-")) {
+                BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(filePath)));
+                String line;
+                while ((line = br.readLine()) != null) {
+                    System.out.println("linea letta dall'output del reducer: "+line);
+                    list.add(parsePoint(line.substring(2)));
+                }
+                br.close();
+                output_found = true;
+            }
+        }
+    }
+    return (output_found)? list : null;
+}
+*/
     private static Point parsePoint(String str) {
         // Takes a string in input: <0.41410840, 1.48714702> and returns a Point
         String cleanInput = str.replaceAll("[<>]", "");   //rimpiazza un singolo carattere che è '<' o '>'
