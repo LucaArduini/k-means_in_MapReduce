@@ -58,7 +58,6 @@ public class KMeans{
         }
 
         public void cleanup(Context context) throws IOException, InterruptedException {
-            System.out.println(clusteringFeatureList);
             for(int i=0; i<centroids.size(); i++)
                 context.write(new IntWritable(i), clusteringFeatureList.get(i));
         }
@@ -92,7 +91,7 @@ public class KMeans{
         String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
 
         if (otherArgs.length != 6) {  // input, k, niter, output, dim, epsilon
-            System.err.println("Usage: KMeans <input> <k> <max_iter> <output> <epsilon>");
+            System.err.println("Usage: KMeans <input> <k> <max_iter> <output> <dim> <epsilon>");
             System.exit(1);
         }
         System.out.println("args[0]: <input>=" + otherArgs[0]);
@@ -166,8 +165,12 @@ public class KMeans{
                 System.out.println("[ITER: " + iter + " ] centroids: "+initialCentroids.toString());
                 break;
             }
-
-            initialCentroids = newCentroids;
+            if (iter%10==0){
+                initialCentroids = getPoints(k, Integer.parseInt(otherArgs[4]));
+            }
+            else {
+                initialCentroids = newCentroids;
+            }
         }
         long end = System.currentTimeMillis();
         long time = end - start;
@@ -227,7 +230,6 @@ public class KMeans{
                     BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(filePath)));
                     String line;
                     while ((line = br.readLine()) != null) {
-                        System.out.println("linea letta dall'output del reducer: "+line);
                         //centroidsList.add(parsePoint(line.substring(2)));
 
                         int read_centroids = Integer.parseInt(line.substring(0, 1));

@@ -46,7 +46,7 @@ public class Point implements Writable{
             features.set(i, features.get(i) + p.getFeatures().get(i));
     }
 
-    private Double distance(Point p){
+    public Double distance(Point p){
         Double sum = 0.0;
 
         for(int i = 0; i < dim; i++)
