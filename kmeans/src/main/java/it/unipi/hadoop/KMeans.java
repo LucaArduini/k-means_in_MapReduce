@@ -1,6 +1,9 @@
 package it.unipi.hadoop;
 
 import java.io.*;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
@@ -103,13 +106,18 @@ public class KMeans{
 
         // initial random centroids computation
         int k = Integer.parseInt(otherArgs[1]);
-        ArrayList<Point> initialCentroids = getPoints(k, Integer.parseInt(otherArgs[4]));
+        ArrayList<Point> initialCentroids = initialize(conf, new Path(otherArgs[0]), k, otherArgs[0]);
 
         int iter = 0;
         int MAX_ITER = Integer.parseInt(otherArgs[2]);
         long start = System.currentTimeMillis();
         log("START");
         log("Dataset : " + otherArgs[0]);
+
+        LocalTime currentTime = LocalTime.now(ZoneId.of("Europe/Rome"));  // Specifica il tuo fuso orario desiderato
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+        String formattedTime = currentTime.format(formatter);
+        log("timestamp="+formattedTime + "\t\tk="+otherArgs[1] + "\t\tepsilon="+otherArgs[5]);
         log("------------------------------------------------------------");
         while (iter < MAX_ITER) {
             Job job = Job.getInstance(conf, "ParallelKMeans");
@@ -150,6 +158,11 @@ public class KMeans{
             ArrayList<Point> newCentroids = new ArrayList<Point>();
             newCentroids = readAndAddCentroid(conf, new Path(otherArgs[3]+iter), k);
 
+            if(newCentroids == null) {
+                newCentroids = initialize(conf, new Path(otherArgs[0]), k, otherArgs[0]);
+                log("\n +++ COMPARE HO RESETTATO TUTTO +++\n");
+            }
+
             iter++;
 
             // Logging
@@ -165,12 +178,13 @@ public class KMeans{
                 System.out.println("[ITER: " + iter + " ] centroids: "+initialCentroids.toString());
                 break;
             }
-            if (iter%10==0){
-                initialCentroids = getPoints(k, Integer.parseInt(otherArgs[4]));
-            }
-            else {
-                initialCentroids = newCentroids;
-            }
+            //if (iter%10==0){
+            //    initialCentroids = getPoints(k, Integer.parseInt(otherArgs[4]));
+            //}
+            //else {
+            //      initialCentroids = newCentroids;
+            //}
+            initialCentroids = newCentroids;
         }
         long end = System.currentTimeMillis();
         long time = end - start;
@@ -200,13 +214,15 @@ public class KMeans{
     
     private static boolean checkTermination(ArrayList<Point> initialCentroids, ArrayList<Point> newCentroids, double epsilon) {
         double sum = 0;
-        for(int i = 0; i < initialCentroids.size(); i++){
-            sum += initialCentroids.get(i).distance(newCentroids.get(i));
-        }
-        System.out.println("[CENTROIDS DISTANCES SUM: "+sum+"]");
-        if(sum < epsilon)
-            return true;
-        return false;
+
+            for (int i = 0; i < initialCentroids.size(); i++) {
+                sum += initialCentroids.get(i).distance(newCentroids.get(i));
+            }
+            System.out.println("[CENTROIDS DISTANCES SUM: " + sum + "]");
+            if (sum < epsilon)
+                return true;
+            else
+                return false;
     }
 
 
@@ -233,7 +249,19 @@ public class KMeans{
                         //centroidsList.add(parsePoint(line.substring(2)));
 
                         int read_centroids = Integer.parseInt(line.substring(0, 1));
+                        Point point_to_check = parsePoint(line.substring(2));
+
+                        //controllo se è un point da -10
+                        boolean empty_cluster = true;
+                        for(int i=0; i<point_to_check.getFeatures().size(); i++)
+                            if(point_to_check.getFeatures().get(i) != 10)
+                                empty_cluster = false;
+
+                        if(empty_cluster)
+                            return null;
+
                         centroidsList.set(read_centroids, parsePoint(line.substring(2)));
+
                         test[read_centroids] = true;
                     }
                     br.close();
@@ -307,5 +335,67 @@ private static ArrayList<Point> readAndAddCentroid(Configuration conf, Path outp
         }
 
         return new Point(numbersList);
+    }
+/*
+    public static ArrayList<Point> initialize(int k, String input){
+        BufferedReader br = null;
+        ArrayList<Point> pointsList = new ArrayList<>();
+        int i = 0;
+
+        try {
+            br = new BufferedReader(new FileReader(input));
+            String line = br.readLine();
+            while(line != null && i<k){
+                Point new_p = parsePoint(line);
+                pointsList.add(new_p);
+                i++;
+                line = br.readLine();
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        return pointsList;
+    }
+    */
+
+
+    private static ArrayList<Point> initialize(Configuration conf, Path inputPath, int k, String inputString) throws IOException {
+        // Function used to read centroids computed by the job and sent in the input file in the HDFS
+        // It reads them and returns an ArrayList<Point>
+        int i = 0;
+        FileSystem fs = FileSystem.get(conf);
+        FileStatus[] fileStatuses = fs.listStatus(inputPath);
+        ArrayList<Point> pointsList = new ArrayList<>(k);
+
+        boolean[] test = new boolean[k];
+        Random random = new Random(); // Create a new instance of Random
+
+        for (FileStatus status : fileStatuses) {
+            if (!status.isDirectory()) {
+                Path filePath = status.getPath();
+                if (filePath.getName().equals(inputString)) {
+                    BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(filePath)));
+                    String line;
+                    ArrayList<String> lines = new ArrayList<>(); // Store all lines in the input file
+
+                    // Read all lines from the input file
+                    while ((line = br.readLine()) != null) {
+                        lines.add(line);
+                    }
+                    br.close();
+
+                    // Select random lines from the input file
+                    while (i < k) {
+                        int randomIndex = random.nextInt(lines.size()); // Generate a random index
+                        String randomLine = lines.get(randomIndex);
+                        pointsList.add(parsePoint(randomLine));
+                        lines.remove(randomIndex); // Remove the selected line to avoid duplicates
+                        i++;
+                    }
+                }
+            }
+        }
+        return pointsList;
     }
 }
