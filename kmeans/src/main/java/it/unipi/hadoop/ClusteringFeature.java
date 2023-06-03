@@ -66,7 +66,6 @@ public class ClusteringFeature implements Writable{
             partialSum.scale(numPoints);
         } 
         else{
-            //partialSum = KMeans.getPoints(1, partialSum.getDim()).get(0);
             for(int i=0; i<partialSum.getFeatures().size(); i++)
                 partialSum.getFeatures().set(i, -10.0);
         }
