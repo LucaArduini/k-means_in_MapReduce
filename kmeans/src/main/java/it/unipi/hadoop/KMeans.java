@@ -104,7 +104,7 @@ public class KMeans{
         System.out.println("args[3]: <output>=" + otherArgs[3]);
         System.out.println("args[4]: <d>=" + otherArgs[4]);
         System.out.println("args[5]  <epsilon>="+otherArgs[5]);
-        System.out.println("args[5]  <num_reducer>="+otherArgs[6]);
+        System.out.println("args[6]  <num_reducer>="+otherArgs[6]);
 
         // variables and initial random centroids initialization
         int k = Integer.parseInt(otherArgs[1]);
@@ -172,7 +172,7 @@ public class KMeans{
 
             // checking the total error at this iteration
             error = checkTermination(initialCentroids, newCentroids);
-            log("[ITER "+iter+"]: error="+error+"\n");
+            log("[ITER "+iter+"]: error="+error);
             if (error<Double.valueOf(otherArgs[5])) {
                 // if the error is below the input threshold, stop the algorithm
                 break;

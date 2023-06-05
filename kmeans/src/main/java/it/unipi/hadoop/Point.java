@@ -12,7 +12,7 @@ import static java.lang.Math.sqrt;
 
 public class Point implements Writable{
     private ArrayList<Double> features = new ArrayList<>();
-    private int dim;
+    private static int dim;
 
     public Point(int size){
         dim = size;
@@ -21,7 +21,7 @@ public class Point implements Writable{
     }
     
     public Point(){
-         //nothing
+        //nothing
     }
     
     public Point(ArrayList<Double> features) {
