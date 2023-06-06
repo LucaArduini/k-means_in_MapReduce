@@ -110,8 +110,8 @@ public class KMeans{
 
         // variables and initial random centroids initialization
         int k = Integer.parseInt(otherArgs[1]);
-        int iter = 0;
-        double error = 0;
+        int iter = 1;
+        double error = 0.0;
         int MAX_ITER = Integer.parseInt(otherArgs[2]);
         long start = System.currentTimeMillis();
         ArrayList<Point> initialCentroids = initialize(conf, new Path(otherArgs[0]), k, otherArgs[0]);
@@ -144,7 +144,7 @@ public class KMeans{
 
             // define I/O
             FileInputFormat.addInputPath(job, new Path(otherArgs[0]));
-            FileOutputFormat.setOutputPath(job, new Path(otherArgs[3]+(iter+1)));
+            FileOutputFormat.setOutputPath(job, new Path(otherArgs[3]+iter));
             job.setInputFormatClass(TextInputFormat.class);
             job.setOutputFormatClass(TextOutputFormat.class);
 
