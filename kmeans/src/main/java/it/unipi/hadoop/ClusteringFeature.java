@@ -1,15 +1,10 @@
 package it.unipi.hadoop;
 
-
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
-
 import org.apache.hadoop.io.Writable;
 
 public class ClusteringFeature implements Writable{
-    // Partial Sum Cluster
     private Point partialSum;
     private int numPoints = 0;
 
@@ -25,6 +20,7 @@ public class ClusteringFeature implements Writable{
     }
     
     public ClusteringFeature(){
+        //nothing
     }
 
     public ClusteringFeature(Point partialSum, int numPoints) {
@@ -72,7 +68,6 @@ public class ClusteringFeature implements Writable{
         
         return partialSum;
     }
-
 
     public String toString(){
         return "Num Points : " + numPoints + " | " + partialSum;

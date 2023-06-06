@@ -1,11 +1,9 @@
 package it.unipi.hadoop;
 
-import org.apache.hadoop.io.Writable;
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Random;
+import org.apache.hadoop.io.Writable;
 
 import static java.lang.Math.pow;
 import static java.lang.Math.sqrt;
