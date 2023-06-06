@@ -144,7 +144,7 @@ public class KMeans{
 
             // define I/O
             FileInputFormat.addInputPath(job, new Path(otherArgs[0]));
-            FileOutputFormat.setOutputPath(job, new Path(otherArgs[3]+iter));
+            FileOutputFormat.setOutputPath(job, new Path(otherArgs[3]+(iter+1)));
             job.setInputFormatClass(TextInputFormat.class);
             job.setOutputFormatClass(TextOutputFormat.class);
 
@@ -166,19 +166,20 @@ public class KMeans{
             // if readAndAddCentroids returns null it means that there's an empty cluster. Re-initialization is needed.
             if(newCentroids == null) {
                 newCentroids = initialize(conf, new Path(otherArgs[0]), k, otherArgs[0]);
-                log("\n +++ [EMPTY CLUSTER, RE-INITIALIZING CENTROIDS] +++\n");
+                log("\n+++ [EMPTY CLUSTER, RE-INITIALIZING CENTROIDS] +++\n");
+            }
+            else {
+                // checking the total error at this iteration
+                error = checkTermination(initialCentroids, newCentroids);
+                log("[ITER " + iter + "]: error=" + error);
+                if (error < Double.valueOf(otherArgs[5])) {
+                    // if the error is below the input threshold, stop the algorithm
+                    break;
+                }
             }
 
             // incrementing iteration count
             iter++;
-
-            // checking the total error at this iteration
-            error = checkTermination(initialCentroids, newCentroids);
-            log("[ITER "+iter+"]: error="+error);
-            if (error<Double.valueOf(otherArgs[5])) {
-                // if the error is below the input threshold, stop the algorithm
-                break;
-            }
 
             // otherwise, go on with the next iteration.
             initialCentroids = newCentroids;
