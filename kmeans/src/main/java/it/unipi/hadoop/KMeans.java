@@ -117,13 +117,14 @@ public class KMeans{
         ArrayList<Point> initialCentroids = initialize(conf, new Path(otherArgs[0]), k, otherArgs[0]);
 
         // log
-        log("START");
-        log("Dataset : " + otherArgs[0]);
+        log("┌---------------------------------------------------------------┐");
+        log(" START");
+        log(" Dataset : " + otherArgs[0]);
         LocalTime currentTime = LocalTime.now(ZoneId.of("Europe/Rome"));
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
         String formattedTime = currentTime.format(formatter);
-        log("timestamp="+formattedTime + "\t\tk="+otherArgs[1] + "\t\tepsilon="+otherArgs[5] +"\t\t reducers="+otherArgs[6]);
-        log("------------------------------------------------------------");
+        log(" timestamp="+formattedTime + "\t\tk="+otherArgs[1] + "\t\tepsilon="+otherArgs[5] +"\t\t reducers="+otherArgs[6]);
+        log(" --------------------------------------------------------------- ");
 
         // algorithm
         while (iter < MAX_ITER) {
@@ -171,7 +172,7 @@ public class KMeans{
             else {
                 // checking the total error at this iteration
                 error = checkTermination(initialCentroids, newCentroids);
-                log("[ITER " + iter + "]: error=" + error);
+                log(" [ITER " + iter + "]: error=" + error);
                 if (error < Double.valueOf(otherArgs[5])) {
                     // if the error is below the input threshold, stop the algorithm
                     break;
@@ -188,8 +189,8 @@ public class KMeans{
         // log
         long end = System.currentTimeMillis();
         long time = end - start;
-        log("FINITO : ci sono volute " + (iter) + " iterazioni e " + time + " millisecondi. Precisione: "+error);
-        log("############################################################\n");
+        log(" FINITO : ci sono volute " + (iter) + " iterazioni e " + time + " millisecondi. Precisione: "+error);
+        log("└---------------------------------------------------------------┘\n");
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
