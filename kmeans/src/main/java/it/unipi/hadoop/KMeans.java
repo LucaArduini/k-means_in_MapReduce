@@ -188,8 +188,8 @@ public class KMeans{
         // log
         long end = System.currentTimeMillis();
         long time = end - start;
-        log("FINITO : ci sono volute " + (iter) + " iterazioni e " + time + " millisecondi. Precisione: "+error+"\n");
-        log("------------------------------------------------------------");
+        log("FINITO : ci sono volute " + (iter) + " iterazioni e " + time + " millisecondi. Precisione: "+error);
+        log("############################################################\n");
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
