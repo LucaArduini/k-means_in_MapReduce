@@ -67,6 +67,7 @@ public class KMeans{
         }
     }
 
+
     public static class KMeansReducer extends Reducer<IntWritable, ClusteringFeature, IntWritable, Point>{
         // K2 = IntWritable (index cluster)
         // V2 = ClusteringFeature (coppia)
@@ -89,6 +90,7 @@ public class KMeans{
             context.write(key, centroid);           //nella forma: "0       <4.0019444906464745, 4.546128116278345>"
         }
     }
+
 
     public static void main(String[] args) throws Exception {
         Configuration conf = new Configuration();
@@ -208,7 +210,6 @@ public class KMeans{
         return sum;
     }
 
-
     private static ArrayList<Point> readAndAddCentroid(Configuration conf, Path outputPath, int k) throws IOException {
         // Function used to read centroids computed by the job and sent in the output file in the HDFS
         // It reads them and returns an ArrayList<Point>
@@ -226,25 +227,25 @@ public class KMeans{
                     BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(filePath)));
                     String line;
                     while ((line = br.readLine()) != null) {
-                        int read_centroids = Integer.parseInt(line.substring(0, 1));
+                        int index_of_read_centroid = Integer.parseInt(line.substring(0, 1));
                         Point point_to_check = parsePoint(line.substring(2));
 
                         boolean empty_cluster = true;
                         for(int i=0; i<point_to_check.getFeatures().size(); i++)
-                            if(point_to_check.getFeatures().get(i) != 10)
+                            if(point_to_check.getFeatures().get(i) != -10.0)
                                 empty_cluster = false;
 
                         if(empty_cluster)
                             return null;
 
-                        centroidsList.set(read_centroids, point_to_check);
-
-                        test[read_centroids] = true;
+                        centroidsList.set(index_of_read_centroid, point_to_check);
+                        test[index_of_read_centroid] = true;
                     }
                     br.close();
                 }
             }
         }
+
         for(boolean x : test){
             if(x==false){
                 System.err.println("It was not possible to read all the centroids");
@@ -306,4 +307,5 @@ public class KMeans{
         }
         return pointsList;
     }
+
 }
