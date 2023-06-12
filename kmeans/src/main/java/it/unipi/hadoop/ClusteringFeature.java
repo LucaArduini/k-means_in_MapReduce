@@ -63,7 +63,7 @@ public class ClusteringFeature implements Writable{
         } 
         else{
             for(int i=0; i<partialSum.getFeatures().size(); i++)
-                partialSum.getFeatures().set(i, -10.0);
+                partialSum.getFeatures().set(i, Double.MAX_VALUE);
         }
         
         return partialSum;
