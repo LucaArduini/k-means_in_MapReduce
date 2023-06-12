@@ -234,7 +234,8 @@ public class KMeans{
 
                         boolean empty_cluster = true;
                         for(int i=0; i<point_to_check.getFeatures().size(); i++)
-                            if(point_to_check.getFeatures().get(i) != -10.0)
+                            // in the reducer, if the cluster is empty it writes in the centroid a simbolic value (Double.MAX_VALUE)
+                            if(point_to_check.getFeatures().get(i) != Double.MAX_VALUE)
                                 empty_cluster = false;
 
                         if(empty_cluster)
