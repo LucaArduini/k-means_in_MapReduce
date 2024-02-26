@@ -4,7 +4,7 @@ Group work carried out by the students: [Luca Arduini](https://github.com/LucaAr
 # CCProject
 
 <p align="center">
-  <img src="https://miro.medium.com/v2/resize:fit:1200/1*rw8IUza1dbffBhiA4i0GNQ.png" alt="k-means_algorithm" width="520" />
+  <img src="https://miro.medium.com/v2/resize:fit:1200/1*rw8IUza1dbffBhiA4i0GNQ.png" alt="k-means_algorithm" width="500" />
 </p>
 
 ### Summary
